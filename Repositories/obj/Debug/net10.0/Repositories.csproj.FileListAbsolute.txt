@@ -1,0 +1,17 @@
+C:\Users\admin\Desktop\code\eShop\Repositories\bin\Debug\net10.0\Repositories.deps.json
+C:\Users\admin\Desktop\code\eShop\Repositories\bin\Debug\net10.0\Repositories.dll
+C:\Users\admin\Desktop\code\eShop\Repositories\bin\Debug\net10.0\Repositories.pdb
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Repositories.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Repositories.AssemblyInfoInputs.cache
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Repositories.AssemblyInfo.cs
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Repositories.csproj.CoreCompileInputs.cache
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Repositories.dll
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\refint\Repositories.dll
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Repositories.pdb
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\ref\Repositories.dll
+C:\Users\admin\Desktop\code\eShop\Repositories\bin\Debug\net10.0\BusinessObjects.dll
+C:\Users\admin\Desktop\code\eShop\Repositories\bin\Debug\net10.0\DataAccessObjects.dll
+C:\Users\admin\Desktop\code\eShop\Repositories\bin\Debug\net10.0\BusinessObjects.pdb
+C:\Users\admin\Desktop\code\eShop\Repositories\bin\Debug\net10.0\DataAccessObjects.pdb
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Repositories.csproj.AssemblyReference.cache
+C:\Users\admin\Desktop\code\eShop\Repositories\obj\Debug\net10.0\Reposito.787EC4B2.Up2Date
