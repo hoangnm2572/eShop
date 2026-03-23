@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using BussinessObjects;
-using Services;
+﻿using BusinessObjects;
+using BusinessObjects.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using Services.Implementations;
+using Services.Interfaces;
 
-namespace Controllers
+namespace eShop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -11,9 +12,9 @@ namespace Controllers
     {
         private readonly IProductService _productService;
 
-        public ProductsController()
+        public ProductsController(IProductService productService)
         {
-            _productService = new ProductService();
+            _productService = productService;
         }
 
         [HttpGet]
@@ -35,27 +36,17 @@ namespace Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] Product product)
+        public IActionResult Create([FromBody] ProductRequestDTO dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            _productService.SaveProduct(product);
-            return Ok(new { message = "Thêm sản phẩm thành công!" });
+            _productService.SaveProduct(dto);
+            return Ok(new { message = "Thêm sản phẩm thành công" });
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Product product)
+        public IActionResult Update(int id, [FromBody] ProductRequestDTO dto)
         {
-            if (id != product.Id)
-            {
-                return BadRequest(new { message = "ID sản phẩm không khớp" });
-            }
-
-            _productService.UpdateProduct(product);
-            return Ok(new { message = "Cập nhật thành công!" });
+            _productService.UpdateProduct(id, dto);
+            return Ok(new { message = "Cập nhật sản phẩm thành công" });
         }
 
         [HttpDelete("{id}")]
@@ -69,6 +60,19 @@ namespace Controllers
 
             _productService.DeleteProduct(id);
             return Ok(new { message = "Xóa sản phẩm thành công!" });
+        }
+
+        [HttpGet("barcode/{barcode}")]
+        public IActionResult GetByBarcode(string barcode)
+        {
+            var product = _productService.GetProductByBarcode(barcode);
+
+            if (product == null)
+            {
+                return NotFound(new { message = "Mã vạch này chưa được khai báo trong hệ thống!" });
+            }
+
+            return Ok(product);
         }
     }
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace BussinessObjects;
+﻿namespace BusinessObjects;
 
 public partial class InventoryLedger
 {

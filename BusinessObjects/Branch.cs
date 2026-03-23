@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace BussinessObjects;
+﻿namespace BusinessObjects;
 
 public partial class Branch
 {
@@ -13,7 +10,7 @@ public partial class Branch
 
     public string? Address { get; set; }
 
-    public bool? IsActive { get; set; }
+    public bool? IsActive { get; set; } = true;
 
     public virtual ICollection<Inventory> Inventories { get; set; } = new List<Inventory>();
 

@@ -1,6 +1,5 @@
 <Solution>
   <Project Path="BusinessObjects/BusinessObjects.csproj" Id="617a841f-f05a-4dac-b3e3-1d8912a7553e" />
-  <Project Path="DataAccessObjects/DataAccessObjects.csproj" Id="3d90093e-5caf-412c-a3e2-2022b242fd5e" />
   <Project Path="eShop/eShop.csproj" />
   <Project Path="Repositories/Repositories.csproj" Id="3169d035-339a-4c81-881b-0e8f83f4142f" />
   <Project Path="Services/Services.csproj" Id="ea12284a-4864-4ddc-8158-046cfa5bc121" />
