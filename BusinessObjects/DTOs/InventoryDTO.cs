@@ -30,6 +30,7 @@ namespace BusinessObjects.DTOs
     public class DirectImportRequestDTO
     {
         public int BranchId { get; set; }
+        public int CreatedBy { get; set; }
         public string Note { get; set; } = "Nhập hàng từ Nhà Cung Cấp";
         public List<InventoryTransactionItemDTO> Items { get; set; } = new List<InventoryTransactionItemDTO>();
     }
@@ -37,6 +38,7 @@ namespace BusinessObjects.DTOs
     public class DirectExportRequestDTO
     {
         public int BranchId { get; set; }
+        public int CreatedBy { get; set; }
         public string Note { get; set; } = "Xuất kho nội bộ";
         public List<InventoryTransactionItemDTO> Items { get; set; } = new List<InventoryTransactionItemDTO>();
     }

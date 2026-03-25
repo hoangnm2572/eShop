@@ -105,12 +105,26 @@ namespace eShop.Controllers
         }
 
         [HttpPut("transfer/{transferId}/approve")]
-        public IActionResult ApproveGoodsRequest(int transferId, [FromBody] ApproveGoodsRequestDTO request)
+        public IActionResult ApproveGoodsRequest(int transferId, [FromBody] ApproveGoodsRequestDTO request, [FromQuery] int userId)
         {
             try
             {
-                _inventoryService.ApproveGoodsRequest(transferId, request);
-                return Ok(new { message = "Đã duyệt và thực hiện chuyển hàng thành công!" });
+                _inventoryService.ApproveGoodsRequest(transferId, request, userId);
+                return Ok(new { message = "Đã duyệt và chuyển sang đóng hàng thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("transfer/{transferId}/complete")]
+        public IActionResult CompleteGoodsRequest(int transferId, [FromQuery] int userId)
+        {
+            try
+            {
+                _inventoryService.CompleteGoodsRequest(transferId, userId);
+                return Ok(new { message = "Đã giao hàng và nhập kho thành công!" });
             }
             catch (Exception ex)
             {
@@ -119,11 +133,11 @@ namespace eShop.Controllers
         }
 
         [HttpPut("transfer/{transferId}/cancel")]
-        public IActionResult CancelGoodsRequest(int transferId)
+        public IActionResult CancelGoodsRequest(int transferId, [FromQuery] int userId)
         {
             try
             {
-                _inventoryService.CancelGoodsRequest(transferId);
+                _inventoryService.CancelGoodsRequest(transferId, userId);
                 return Ok(new { message = "Đã hủy phiếu yêu cầu cấp hàng thành công!" });
             }
             catch (Exception ex)
@@ -139,6 +153,48 @@ namespace eShop.Controllers
             {
                 _inventoryService.UpdateGoodsRequest(transferId, branchId, request);
                 return Ok(new { message = "Đã cập nhật đơn xin hàng thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("history/ledger")]
+        public IActionResult GetLedgerHistory([FromQuery] int? branchId = null)
+        {
+            try
+            {
+                var result = _inventoryService.GetInventoryLedgerHistory(branchId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("history/transfers")]
+        public IActionResult GetTransferHistory([FromQuery] int? branchId = null)
+        {
+            try
+            {
+                var result = _inventoryService.GetInventoryTransferHistory(branchId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("history/ledger/grouped")]
+        public IActionResult GetLedgerGroupedHistory([FromQuery] int? branchId = null)
+        {
+            try
+            {
+                var result = _inventoryService.GetInventoryLedgerGroupedHistory(branchId);
+                return Ok(result);
             }
             catch (Exception ex)
             {

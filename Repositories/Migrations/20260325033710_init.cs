@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Repositories.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -68,6 +68,7 @@ namespace Repositories.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Username = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false),
                     PasswordHash = table.Column<string>(type: "varchar(255)", unicode: false, maxLength: 255, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Role = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false),
                     BranchId = table.Column<int>(type: "int", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: true, defaultValue: true)
@@ -130,11 +131,18 @@ namespace Repositories.Migrations
                     CreatedBy = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(getdate())"),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApprovedBy = table.Column<int>(type: "int", nullable: true),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Inventor__3214EC076396C06C", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InventoryTransfer_ApprovedBy_User",
+                        column: x => x.ApprovedBy,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__Inventory__Creat__5FB337D6",
                         column: x => x.CreatedBy,
@@ -186,11 +194,17 @@ namespace Repositories.Migrations
                     TransactionType = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false),
                     QuantityChange = table.Column<int>(type: "int", nullable: false),
                     ReferenceCode = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(getdate())")
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "(getdate())"),
+                    CreatedBy = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Inventor__3214EC07F66B68EE", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InventoryLedger_CreatedBy_User",
+                        column: x => x.CreatedBy,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__Inventory__Branc__6754599E",
                         column: x => x.BranchId,
@@ -262,6 +276,11 @@ namespace Repositories.Migrations
                 column: "BranchId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_InventoryLedgers_CreatedBy",
+                table: "InventoryLedgers",
+                column: "CreatedBy");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InventoryLedgers_ProductId",
                 table: "InventoryLedgers",
                 column: "ProductId");
@@ -275,6 +294,11 @@ namespace Repositories.Migrations
                 name: "IX_InventoryTransferDetails_TransferId",
                 table: "InventoryTransferDetails",
                 column: "TransferId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransfers_ApprovedBy",
+                table: "InventoryTransfers",
+                column: "ApprovedBy");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InventoryTransfers_CreatedBy",

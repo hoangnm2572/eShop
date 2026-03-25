@@ -27,6 +27,7 @@ namespace Services.Implementations
             {
                 Id = u.Id,
                 Username = u.Username,
+                FullName = u.FullName,
                 Role = u.Role,
                 BranchId = u.BranchId ?? 0,
                 BranchName = branches.FirstOrDefault(b => b.Id == u.BranchId)?.Name ?? "Hệ thống",
@@ -43,6 +44,7 @@ namespace Services.Implementations
             {
                 Id = u.Id,
                 Username = u.Username,
+                FullName = u.FullName,
                 Role = u.Role,
                 BranchId = u.BranchId ?? 0
             };
@@ -66,6 +68,20 @@ namespace Services.Implementations
             if (user == null) throw new Exception("Người dùng không tồn tại");
 
             user.IsActive = true;
+            _userRepo.Update(user);
+        }
+
+        public void UpdateUser(int userId, UpdateUserRequestDTO request)
+        {
+            var user = _userRepo.GetById(userId);
+            if (user == null) throw new Exception("Không tìm thấy tài khoản!");
+
+            if (user.Username.ToLower() == "admin" && request.Role != "ADMIN")
+                throw new Exception("Không thể hạ quyền của Admin gốc!");
+
+            user.FullName = request.FullName;
+            user.Role = request.Role;
+
             _userRepo.Update(user);
         }
     }

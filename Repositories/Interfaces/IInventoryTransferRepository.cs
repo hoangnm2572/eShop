@@ -9,5 +9,6 @@ namespace Repositories.Interfaces
     public interface IInventoryTransferRepository : IBaseRepository<InventoryTransfer>
     {
         InventoryTransfer? GetTransferWithDetails(int transferId);
+        IEnumerable<InventoryTransfer> GetAllTransfersWithDetails(int? branchId = null);
     }
 }

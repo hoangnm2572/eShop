@@ -1,12 +1,11 @@
-﻿using Azure.Core;
-using BusinessObjects;
+﻿using BusinessObjects;
 using BusinessObjects.DTOs;
 using Repositories.Interfaces;
 using Services.Helpers;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace Services.Implementations
 {
@@ -72,7 +71,6 @@ namespace Services.Implementations
             var existingUser = _userRepo.GetAll().FirstOrDefault(u => u.Username == username);
             if (existingUser != null)
             {
-
                 username = $"{username}_{branch.Id}";
             }
 
@@ -83,8 +81,10 @@ namespace Services.Implementations
             {
                 Username = username,
                 PasswordHash = passwordHash,
+                FullName = branch.Name,
                 BranchId = branch.Id,
-                Role = "STORE"
+                Role = "STORE",
+                IsActive = true
             };
 
             _userRepo.Add(newUser);

@@ -12,8 +12,8 @@ using Repositories.dbContext;
 namespace Repositories.Migrations
 {
     [DbContext(typeof(eShopDbContext))]
-    [Migration("20260323065107_Init")]
-    partial class Init
+    [Migration("20260325033710_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -94,6 +94,9 @@ namespace Repositories.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("(getdate())");
 
+                    b.Property<int?>("CreatedBy")
+                        .HasColumnType("int");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -116,6 +119,8 @@ namespace Repositories.Migrations
 
                     b.HasIndex("BranchId");
 
+                    b.HasIndex("CreatedBy");
+
                     b.HasIndex("ProductId");
 
                     b.ToTable("InventoryLedgers");
@@ -128,6 +133,12 @@ namespace Repositories.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ApprovedBy")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
@@ -163,6 +174,8 @@ namespace Repositories.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK__Inventor__3214EC076396C06C");
+
+                    b.HasIndex("ApprovedBy");
 
                     b.HasIndex("CreatedBy");
 
@@ -391,6 +404,12 @@ namespace Repositories.Migrations
                     b.Property<int?>("BranchId")
                         .HasColumnType("int");
 
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(150)");
+
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -452,6 +471,11 @@ namespace Repositories.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__Inventory__Branc__6754599E");
 
+                    b.HasOne("BusinessObjects.User", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .HasConstraintName("FK_InventoryLedger_CreatedBy_User");
+
                     b.HasOne("BusinessObjects.Product", "Product")
                         .WithMany("InventoryLedgers")
                         .HasForeignKey("ProductId")
@@ -460,11 +484,18 @@ namespace Repositories.Migrations
 
                     b.Navigation("Branch");
 
+                    b.Navigation("Creator");
+
                     b.Navigation("Product");
                 });
 
             modelBuilder.Entity("BusinessObjects.InventoryTransfer", b =>
                 {
+                    b.HasOne("BusinessObjects.User", "ApprovedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .HasConstraintName("FK_InventoryTransfer_ApprovedBy_User");
+
                     b.HasOne("BusinessObjects.User", "CreatedByNavigation")
                         .WithMany("InventoryTransfers")
                         .HasForeignKey("CreatedBy")
@@ -481,6 +512,8 @@ namespace Repositories.Migrations
                         .HasForeignKey("ToBranchId")
                         .IsRequired()
                         .HasConstraintName("FK__Inventory__ToBra__5EBF139D");
+
+                    b.Navigation("ApprovedByNavigation");
 
                     b.Navigation("CreatedByNavigation");
 

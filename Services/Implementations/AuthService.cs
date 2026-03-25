@@ -6,6 +6,7 @@ using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 
@@ -43,6 +44,7 @@ namespace Services.Implementations
             {
                 Username = request.Username,
                 PasswordHash = passwordHash,
+                FullName = request.FullName,
                 BranchId = request.BranchId,
                 Role = request.Role,
                 IsActive = true
@@ -78,6 +80,7 @@ namespace Services.Implementations
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.Username),
+                    new Claim("FullName", user.FullName ?? ""),
                     new Claim(ClaimTypes.Role, user.Role ?? "STORE"),
                     new Claim("BranchId", user.BranchId.ToString())
                 }),
@@ -95,6 +98,7 @@ namespace Services.Implementations
                 Token = jwtString,
                 UserId = user.Id,
                 Username = user.Username,
+                FullName = user.FullName,
                 BranchId = user.BranchId ?? 0,
                 Role = user.Role ?? "STORE"
             };

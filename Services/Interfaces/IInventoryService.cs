@@ -17,8 +17,14 @@ namespace Services.Interfaces
         void TransferInventory(DirectTransferRequestDTO request);
 
         void RequestGoodsFromHub(int requestingBranchId, RequestGoodsDTO request);
-        void ApproveGoodsRequest(int transferId, ApproveGoodsRequestDTO request);
-        void CancelGoodsRequest(int transferId);
+        void ApproveGoodsRequest(int transferId, ApproveGoodsRequestDTO request, int userId);
+        void CancelGoodsRequest(int transferId, int userId);
+        void CompleteGoodsRequest(int transferId, int userId);
         void UpdateGoodsRequest(int transferId, int branchId, RequestGoodsDTO request);
+
+        IEnumerable<InventoryLedgerHistoryDTO> GetInventoryLedgerHistory(int? branchId = null);
+        IEnumerable<InventoryTransferHistoryDTO> GetInventoryTransferHistory(int? branchId = null);
+
+        IEnumerable<InventoryLedgerGroupedDTO> GetInventoryLedgerGroupedHistory(int? branchId = null);
     }
 }

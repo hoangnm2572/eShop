@@ -16,7 +16,11 @@ public partial class InventoryLedger
 
     public DateTime? CreatedAt { get; set; }
 
+    public int? CreatedBy { get; set; }
+
     public virtual Branch Branch { get; set; } = null!;
 
     public virtual Product Product { get; set; } = null!;
+
+    public virtual User? Creator { get; set; }
 }

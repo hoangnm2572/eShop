@@ -11,5 +11,6 @@ namespace Services.Interfaces
         UserResponseDTO GetUserById(int id);
         void DeleteUser(int id);
         void ActivateUser(int id);
+        void UpdateUser(int userId, UpdateUserRequestDTO request);
     }
 }

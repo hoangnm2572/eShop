@@ -105,7 +105,8 @@ namespace Services.Implementations
                     TransactionType = "IN",
                     QuantityChange = item.Quantity,
                     ReferenceCode = refCode,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = request.CreatedBy
                 });
             }
         }
@@ -123,6 +124,8 @@ namespace Services.Implementations
                 CreatedBy = request.CreatedBy,
                 CreatedAt = DateTime.Now,
                 CompletedAt = DateTime.Now,
+                ApprovedAt = DateTime.Now,
+                ApprovedBy = request.CreatedBy,
                 Note = request.Note,
                 InventoryTransferDetails = request.Items.Select(x => new InventoryTransferDetail
                 {
@@ -143,7 +146,8 @@ namespace Services.Implementations
                     TransactionType = "TRANSFER_OUT",
                     QuantityChange = -item.Quantity,
                     ReferenceCode = tCode,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = request.CreatedBy
                 });
 
                 AddOrUpdateStock(request.ToBranchId, item.ProductId, item.Quantity);
@@ -154,7 +158,8 @@ namespace Services.Implementations
                     TransactionType = "TRANSFER_IN",
                     QuantityChange = item.Quantity,
                     ReferenceCode = tCode,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = request.CreatedBy
                 });
             }
         }
@@ -177,7 +182,8 @@ namespace Services.Implementations
                     TransactionType = "OUT",
                     QuantityChange = -item.Quantity,
                     ReferenceCode = refCode,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = request.CreatedBy
                 });
             }
         }
@@ -208,15 +214,16 @@ namespace Services.Implementations
             _transferRepo.Add(transfer);
         }
 
-        public void ApproveGoodsRequest(int transferId, ApproveGoodsRequestDTO request)
+        public void ApproveGoodsRequest(int transferId, ApproveGoodsRequestDTO request, int userId)
         {
             var transfer = _transferRepo.GetTransferWithDetails(transferId);
 
             if (transfer == null) throw new Exception("Không tìm thấy phiếu yêu cầu!");
             if (transfer.Status != "REQUESTED") throw new Exception("Phiếu này đã được xử lý hoặc không hợp lệ!");
 
-            transfer.Status = "COMPLETED";
-            transfer.CompletedAt = DateTime.Now;
+            transfer.Status = "PACKED";
+            transfer.ApprovedAt = DateTime.Now;
+            transfer.ApprovedBy = userId;
 
             var oldDetails = transfer.InventoryTransferDetails.ToList();
             foreach (var oldItem in oldDetails)
@@ -242,9 +249,26 @@ namespace Services.Implementations
                     TransactionType = "TRANSFER_OUT",
                     QuantityChange = -item.Quantity,
                     ReferenceCode = transfer.TransferCode,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = userId
                 });
+            }
 
+            _transferRepo.Update(transfer);
+        }
+
+        public void CompleteGoodsRequest(int transferId, int userId)
+        {
+            var transfer = _transferRepo.GetTransferWithDetails(transferId);
+
+            if (transfer == null) throw new Exception("Không tìm thấy phiếu yêu cầu!");
+            if (transfer.Status != "PACKED") throw new Exception("Phiếu này chưa được đóng hàng/xuất kho!");
+
+            transfer.Status = "COMPLETED";
+            transfer.CompletedAt = DateTime.Now;
+
+            foreach (var item in transfer.InventoryTransferDetails)
+            {
                 AddOrUpdateStock(transfer.ToBranchId, item.ProductId, item.Quantity);
 
                 _ledgerRepo.Add(new InventoryLedger
@@ -254,14 +278,15 @@ namespace Services.Implementations
                     TransactionType = "TRANSFER_IN",
                     QuantityChange = item.Quantity,
                     ReferenceCode = transfer.TransferCode,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = userId
                 });
             }
 
             _transferRepo.Update(transfer);
         }
 
-        public void CancelGoodsRequest(int transferId)
+        public void CancelGoodsRequest(int transferId, int userId)
         {
             var transfer = _transferRepo.GetById(transferId);
 
@@ -270,6 +295,8 @@ namespace Services.Implementations
 
             transfer.Status = "CANCELLED";
             transfer.CompletedAt = DateTime.Now;
+            transfer.ApprovedAt = DateTime.Now;
+            transfer.ApprovedBy = userId;
 
             _transferRepo.Update(transfer);
         }
@@ -331,6 +358,124 @@ namespace Services.Implementations
 
             inv.Quantity -= qty;
             _inventoryRepo.Update(inv);
+        }
+
+        public IEnumerable<InventoryLedgerHistoryDTO> GetInventoryLedgerHistory(int? branchId = null)
+        {
+            var ledgers = _ledgerRepo.GetLedgersWithDetails(branchId);
+            var transfers = _transferRepo.GetAll().ToList();
+
+            return ledgers.Select(l =>
+            {
+                var transfer = transfers.FirstOrDefault(t => t.TransferCode == l.ReferenceCode);
+                return new InventoryLedgerHistoryDTO
+                {
+                    Id = l.Id,
+                    BranchId = l.BranchId,
+                    BranchName = l.Branch?.Name ?? "N/A",
+                    ProductId = l.ProductId,
+                    ProductName = l.Product?.Name ?? "N/A",
+                    ProductSku = l.Product?.Sku ?? "N/A",
+                    TransactionType = l.TransactionType,
+                    QuantityChange = l.QuantityChange,
+                    ReferenceCode = l.ReferenceCode,
+                    CreatedAt = l.CreatedAt,
+                    CreatedBy = l.CreatedBy,
+                    ApprovedBy = transfer?.ApprovedBy,
+                    ApproverName = transfer?.ApprovedByNavigation?.FullName,
+                    CreatorName = l.Creator?.FullName ?? "Hệ thống"
+                };
+            });
+        }
+
+        public IEnumerable<InventoryTransferHistoryDTO> GetInventoryTransferHistory(int? branchId = null)
+        {
+            var transfers = _transferRepo.GetAllTransfersWithDetails(branchId);
+
+            return transfers.Select(t => new InventoryTransferHistoryDTO
+            {
+                Id = t.Id,
+                TransferCode = t.TransferCode,
+                FromBranchId = t.FromBranchId,
+                FromBranchName = t.FromBranch?.Name ?? "N/A",
+                ToBranchId = t.ToBranchId,
+                ToBranchName = t.ToBranch?.Name ?? "N/A",
+                Status = t.Status,
+                Note = t.Note,
+                CreatedAt = t.CreatedAt ?? DateTime.Now,
+                CreatedBy = t.CreatedBy ?? 1,
+                CreatorName = t.CreatedByNavigation?.FullName ?? "N/A",
+                ApprovedAt = t.ApprovedAt,
+                ApprovedBy = t.ApprovedBy,
+                ApproverName = t.ApprovedByNavigation?.FullName,
+
+                Items = t.InventoryTransferDetails.Select(d => new InventoryTransferDetailHistoryDTO
+                {
+                    ProductId = d.ProductId,
+                    ProductName = d.Product?.Name ?? "N/A",
+                    ProductSku = d.Product?.Sku ?? "N/A",
+                    Quantity = d.Quantity
+                }).ToList()
+            });
+        }
+
+        public IEnumerable<InventoryLedgerGroupedDTO> GetInventoryLedgerGroupedHistory(int? branchId = null)
+        {
+            var ledgers = _ledgerRepo.GetLedgersWithDetails(branchId);
+
+            var transfers = _transferRepo.GetAllTransfersWithDetails(null).ToList();
+            var grouped = ledgers
+                .Where(l => !string.IsNullOrEmpty(l.ReferenceCode))
+                .GroupBy(l => new { l.ReferenceCode, l.BranchId, l.TransactionType })
+                .Select(g =>
+                {
+                    var firstLedger = g.First();
+                    string? partnerName = null;
+
+                    var transfer = transfers.FirstOrDefault(t => t.TransferCode == g.Key.ReferenceCode);
+
+                    if (g.Key.TransactionType == "TRANSFER_OUT" || g.Key.TransactionType == "TRANSFER_IN")
+                    {
+
+                        if (transfer != null)
+                        {
+                            if (g.Key.TransactionType == "TRANSFER_OUT")
+                                partnerName = transfer.ToBranch?.Name;
+                            else if (g.Key.TransactionType == "TRANSFER_IN")
+                                partnerName = transfer.FromBranch?.Name;
+                        }
+                    }
+
+                    return new InventoryLedgerGroupedDTO
+                    {
+                        ReferenceCode = g.Key.ReferenceCode,
+                        TransactionType = g.Key.TransactionType,
+                        BranchId = g.Key.BranchId,
+                        BranchName = firstLedger.Branch?.Name ?? "N/A",
+                        PartnerBranchName = partnerName,
+                        CreatedAt = firstLedger.CreatedAt,
+                        CreatorName = firstLedger.Creator?.FullName ?? "Hệ thống",
+                        ApproverName = transfer?.ApprovedByNavigation?.FullName ?? (transfer != null ? "Chưa duyệt" : null),
+                        ApprovedBy = transfer?.ApprovedBy,
+                        TotalItems = g.Select(x => x.ProductId).Distinct().Count(),
+                        TotalQuantity = g.Sum(x => Math.Abs(x.QuantityChange)),
+                        Details = g.Select(l => new InventoryLedgerHistoryDTO
+                        {
+                            Id = l.Id,
+                            ProductId = l.ProductId,
+                            ProductName = l.Product?.Name ?? "N/A",
+                            ProductSku = l.Product?.Sku ?? "N/A",
+                            TransactionType = l.TransactionType,
+                            QuantityChange = l.QuantityChange,
+                            ReferenceCode = l.ReferenceCode,
+                            ApproverName = transfer?.ApprovedByNavigation?.FullName
+                        }).ToList()
+                    };
+                })
+                .OrderByDescending(x => x.CreatedAt)
+                .ToList();
+
+            return grouped;
         }
     }
 }

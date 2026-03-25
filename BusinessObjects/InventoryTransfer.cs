@@ -20,7 +20,13 @@ public partial class InventoryTransfer
 
     public string? Note { get; set; }
 
+    public int? ApprovedBy { get; set; }
+
+    public DateTime? ApprovedAt { get; set; }
+
     public virtual User? CreatedByNavigation { get; set; }
+
+    public virtual User? ApprovedByNavigation { get; set; }
 
     public virtual Branch FromBranch { get; set; } = null!;
 

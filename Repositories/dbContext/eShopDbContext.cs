@@ -98,6 +98,12 @@ public partial class eShopDbContext : DbContext
                 .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Inventory__Produ__68487DD7");
+
+            entity.HasOne(d => d.Creator)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InventoryLedger_CreatedBy_User");
         });
 
         modelBuilder.Entity<InventoryTransfer>(entity =>
@@ -116,6 +122,7 @@ public partial class eShopDbContext : DbContext
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.InventoryTransfers)
                 .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Inventory__Creat__5FB337D6");
 
             entity.HasOne(d => d.FromBranch).WithMany(p => p.InventoryTransferFromBranches)
@@ -127,6 +134,12 @@ public partial class eShopDbContext : DbContext
                 .HasForeignKey(d => d.ToBranchId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Inventory__ToBra__5EBF139D");
+
+            entity.HasOne(d => d.ApprovedByNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.ApprovedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InventoryTransfer_ApprovedBy_User");
         });
 
         modelBuilder.Entity<InventoryTransferDetail>(entity =>
@@ -186,15 +199,23 @@ public partial class eShopDbContext : DbContext
             entity.HasIndex(e => e.Username, "UQ__Users__536C85E43150DA93").IsUnique();
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+
             entity.Property(e => e.Role)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+
             entity.Property(e => e.Username)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+
+            entity.Property(e => e.FullName)
+                .HasMaxLength(150)  
+                .IsRequired() 
+                .IsUnicode(true); 
 
             entity.HasOne(d => d.Branch).WithMany(p => p.Users)
                 .HasForeignKey(d => d.BranchId)

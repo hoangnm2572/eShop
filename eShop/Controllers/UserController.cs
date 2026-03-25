@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using BusinessObjects.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Services.Implementations;
 using Services.Interfaces;
 
 namespace eShop.Controllers
@@ -50,6 +52,20 @@ namespace eShop.Controllers
             {
                 _userService.ActivateUser(id);
                 return Ok(new { message = "Đã kích hoạt tài khoản" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("users/{id}")]
+        public IActionResult UpdateUser(int id, [FromBody] UpdateUserRequestDTO request)
+        {
+            try
+            {
+                _userService.UpdateUser(id, request);
+                return Ok(new { message = "Cập nhật thành công!" });
             }
             catch (Exception ex)
             {

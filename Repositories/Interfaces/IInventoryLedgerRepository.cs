@@ -8,5 +8,6 @@ namespace Repositories.Interfaces
 {
     public interface IInventoryLedgerRepository : IBaseRepository<InventoryLedger>
     {
+        IEnumerable<InventoryLedger> GetLedgersWithDetails(int? branchId = null);
     }
 }
