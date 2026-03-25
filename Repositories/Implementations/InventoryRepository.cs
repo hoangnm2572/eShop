@@ -25,5 +25,17 @@ namespace Repositories.Implementations
                 .Where(i => i.BranchId == branchId)
                 .ToList();
         }
+
+        public IEnumerable<Inventory> GetInventoryWithDetails()
+        {
+            return _context.Inventories
+                .Include(i => i.Product)
+                    .ThenInclude(p => p.UnitConversions)
+                .Include(i => i.Product)
+                    .ThenInclude(p => p.ProductGroup)
+                .Include(i => i.Product)
+                    .ThenInclude(p => p.Supplier)
+                .ToList();
+        }
     }
 }

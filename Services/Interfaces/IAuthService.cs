@@ -10,5 +10,6 @@ namespace Services.Interfaces
         void Register(RegisterRequestDTO request);
         AuthResponseDTO Login(LoginRequestDTO request, string jwtKey, string jwtIssuer);
         void ChangePassword(ChangePasswordRequestDTO request);
+        void ChangePasswordByBranch(int branchId, string newPassword);
     }
 }

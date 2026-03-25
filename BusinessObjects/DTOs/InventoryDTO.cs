@@ -56,4 +56,10 @@ namespace BusinessObjects.DTOs
         public int CreatedBy { get; set; }
         public List<InventoryTransactionItemDTO> Items { get; set; } = new List<InventoryTransactionItemDTO>();
     }
+
+    public class ApproveGoodsRequestDTO
+    {
+        public int UserId { get; set; }
+        public List<InventoryTransactionItemDTO> ItemsToApprove { get; set; } = new List<InventoryTransactionItemDTO>();
+    }
 }

@@ -27,9 +27,12 @@ namespace Services.Implementations
             var branch = _branchRepo.GetById(request.BranchId);
             if (branch == null) throw new Exception("Chi nhánh không tồn tại!");
 
-            var existingUserInBranch = _userRepo.GetAll().FirstOrDefault(u => u.BranchId == request.BranchId);
-            if (existingUserInBranch != null)
-                throw new Exception($"Chi nhánh '{branch.Name}' đã có tài khoản rồi, không thể tạo thêm!");
+            if (request.Role == "STORE")
+            {
+                var existingUserInBranch = _userRepo.GetAll().FirstOrDefault(u => u.BranchId == request.BranchId);
+                if (existingUserInBranch != null)
+                    throw new Exception($"Chi nhánh '{branch.Name}' đã có tài khoản rồi!");
+            }
 
             var usernameExists = _userRepo.GetAll().Any(u => u.Username == request.Username);
             if (usernameExists) throw new Exception("Tên đăng nhập đã tồn tại!");
@@ -41,7 +44,7 @@ namespace Services.Implementations
                 Username = request.Username,
                 PasswordHash = passwordHash,
                 BranchId = request.BranchId,
-                Role = request.BranchId == 1 ? "ADMIN" : "STORE",
+                Role = request.Role,
                 IsActive = true
             };
 
@@ -56,6 +59,15 @@ namespace Services.Implementations
 
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isPasswordValid) throw new Exception("Sai mật khẩu!");
+
+            if (user.BranchId.HasValue)
+            {
+                var branch = _branchRepo.GetById(user.BranchId.Value);
+                if (branch != null && branch.IsActive == false)
+                {
+                    throw new Exception("Chi nhánh của bạn hiện đang ngừng hoạt động. Không thể truy cập hệ thống!");
+                }
+            }
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(jwtKey);
@@ -95,6 +107,16 @@ namespace Services.Implementations
 
             string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
+            user.PasswordHash = newPasswordHash;
+            _userRepo.Update(user);
+        }
+
+        public void ChangePasswordByBranch(int branchId, string newPassword)
+        {
+            var user = _userRepo.GetAll().FirstOrDefault(u => u.BranchId == branchId);
+            if (user == null) throw new Exception("Không tìm thấy tài khoản gắn với chi nhánh này!");
+
+            string newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
             user.PasswordHash = newPasswordHash;
             _userRepo.Update(user);
         }

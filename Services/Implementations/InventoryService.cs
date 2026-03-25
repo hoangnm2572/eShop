@@ -59,6 +59,37 @@ namespace Services.Implementations
             }).ToList();
         }
 
+        public IEnumerable<InventoryResponseDTO> GetInventory()
+        {
+            var inventories = _inventoryRepo.GetInventoryWithDetails();
+
+            return inventories.Select(i => new InventoryResponseDTO
+            {
+                ProductId = i.ProductId,
+                Quantity = i.Quantity,
+
+                Barcode = i.Product?.Barcode,
+                Sku = i.Product?.Sku ?? "",
+                Name = i.Product?.Name ?? "",
+                BaseUnit = i.Product?.BaseUnit ?? "",
+                PurchasePrice = i.Product?.PurchasePrice ?? 0,
+                SalePrice = i.Product?.SalePrice ?? 0,
+                IsActive = i.Product?.IsActive ?? true,
+                ShowOnPos = i.Product?.ShowOnPos ?? true,
+                ProductGroupName = i.Product?.ProductGroup?.Name,
+                SupplierName = i.Product?.Supplier?.Name,
+
+                UnitConversions = i.Product?.UnitConversions.Select(u => new UnitConversionDTO
+                {
+                    Id = u.Id,
+                    UnitName = u.UnitName,
+                    ConversionRate = u.ConversionRate,
+                    PurchasePrice = u.PurchasePrice,
+                    SalePrice = u.SalePrice
+                }).ToList() ?? new List<UnitConversionDTO>()
+            }).ToList();
+        }
+
         public void DirectImportToBranch(DirectImportRequestDTO request)
         {
             string refCode = "IMPORT-" + DateTime.Now.ToString("yyyyMMddHHmmss");
@@ -128,28 +159,27 @@ namespace Services.Implementations
             }
         }
 
-        private void AddOrUpdateStock(int branchId, int productId, int qty)
+        public void DirectExportFromBranch(DirectExportRequestDTO request)
         {
-            var inv = _inventoryRepo.GetAll().FirstOrDefault(i => i.BranchId == branchId && i.ProductId == productId);
-            if (inv != null)
-            {
-                inv.Quantity += qty;
-                _inventoryRepo.Update(inv);
-            }
-            else
-            {
-                _inventoryRepo.Add(new Inventory { BranchId = branchId, ProductId = productId, Quantity = qty });
-            }
-        }
+            if (request.BranchId != 1)
+                throw new Exception("Chỉ Kho tổng (Chi nhánh 1) mới có quyền xuất kho trực tiếp!");
 
-        private void DeductStock(int branchId, int productId, int qty)
-        {
-            var inv = _inventoryRepo.GetAll().FirstOrDefault(i => i.BranchId == branchId && i.ProductId == productId);
-            if (inv == null || inv.Quantity < qty)
-                throw new Exception($"Lỗi: Chi nhánh {branchId} không đủ số lượng tồn kho cho sản phẩm ID {productId} để xuất!");
+            string refCode = "EXPORT-" + DateTime.Now.ToString("yyyyMMddHHmmss");
 
-            inv.Quantity -= qty;
-            _inventoryRepo.Update(inv);
+            foreach (var item in request.Items)
+            {
+                DeductStock(request.BranchId, item.ProductId, item.Quantity);
+
+                _ledgerRepo.Add(new InventoryLedger
+                {
+                    BranchId = request.BranchId,
+                    ProductId = item.ProductId,
+                    TransactionType = "OUT",
+                    QuantityChange = -item.Quantity,
+                    ReferenceCode = refCode,
+                    CreatedAt = DateTime.Now
+                });
+            }
         }
 
         public void RequestGoodsFromHub(int requestingBranchId, RequestGoodsDTO request)
@@ -178,7 +208,7 @@ namespace Services.Implementations
             _transferRepo.Add(transfer);
         }
 
-        public void ApproveGoodsRequest(int transferId, int approvedByUserId)
+        public void ApproveGoodsRequest(int transferId, ApproveGoodsRequestDTO request)
         {
             var transfer = _transferRepo.GetTransferWithDetails(transferId);
 
@@ -188,55 +218,47 @@ namespace Services.Implementations
             transfer.Status = "COMPLETED";
             transfer.CompletedAt = DateTime.Now;
 
-            foreach (var detail in transfer.InventoryTransferDetails)
+            var oldDetails = transfer.InventoryTransferDetails.ToList();
+            foreach (var oldItem in oldDetails)
             {
-                DeductStock(transfer.FromBranchId, detail.ProductId, detail.Quantity);
+                _transferDetailRepo.Delete(oldItem);
+            }
+
+            transfer.InventoryTransferDetails = request.ItemsToApprove.Select(x => new InventoryTransferDetail
+            {
+                ProductId = x.ProductId,
+                Quantity = x.Quantity,
+                TransferId = transferId
+            }).ToList();
+
+            foreach (var item in request.ItemsToApprove)
+            {
+                DeductStock(transfer.FromBranchId, item.ProductId, item.Quantity);
+
                 _ledgerRepo.Add(new InventoryLedger
                 {
                     BranchId = transfer.FromBranchId,
-                    ProductId = detail.ProductId,
+                    ProductId = item.ProductId,
                     TransactionType = "TRANSFER_OUT",
-                    QuantityChange = -detail.Quantity,
+                    QuantityChange = -item.Quantity,
                     ReferenceCode = transfer.TransferCode,
                     CreatedAt = DateTime.Now
                 });
 
-                AddOrUpdateStock(transfer.ToBranchId, detail.ProductId, detail.Quantity);
+                AddOrUpdateStock(transfer.ToBranchId, item.ProductId, item.Quantity);
+
                 _ledgerRepo.Add(new InventoryLedger
                 {
                     BranchId = transfer.ToBranchId,
-                    ProductId = detail.ProductId,
+                    ProductId = item.ProductId,
                     TransactionType = "TRANSFER_IN",
-                    QuantityChange = detail.Quantity,
+                    QuantityChange = item.Quantity,
                     ReferenceCode = transfer.TransferCode,
                     CreatedAt = DateTime.Now
                 });
             }
 
             _transferRepo.Update(transfer);
-        }
-
-        public void DirectExportFromBranch(DirectExportRequestDTO request)
-        {
-            if (request.BranchId != 1)
-                throw new Exception("Chỉ Kho tổng (Chi nhánh 1) mới có quyền xuất kho trực tiếp!");
-
-            string refCode = "EXPORT-" + DateTime.Now.ToString("yyyyMMddHHmmss");
-
-            foreach (var item in request.Items)
-            {
-                DeductStock(request.BranchId, item.ProductId, item.Quantity);
-
-                _ledgerRepo.Add(new InventoryLedger
-                {
-                    BranchId = request.BranchId,
-                    ProductId = item.ProductId,
-                    TransactionType = "OUT",
-                    QuantityChange = -item.Quantity,
-                    ReferenceCode = refCode,
-                    CreatedAt = DateTime.Now
-                });
-            }
         }
 
         public void CancelGoodsRequest(int transferId)
@@ -285,6 +307,30 @@ namespace Services.Implementations
             }).ToList();
 
             _transferRepo.Update(transfer);
+        }
+
+        private void AddOrUpdateStock(int branchId, int productId, int qty)
+        {
+            var inv = _inventoryRepo.GetAll().FirstOrDefault(i => i.BranchId == branchId && i.ProductId == productId);
+            if (inv != null)
+            {
+                inv.Quantity += qty;
+                _inventoryRepo.Update(inv);
+            }
+            else
+            {
+                _inventoryRepo.Add(new Inventory { BranchId = branchId, ProductId = productId, Quantity = qty });
+            }
+        }
+
+        private void DeductStock(int branchId, int productId, int qty)
+        {
+            var inv = _inventoryRepo.GetAll().FirstOrDefault(i => i.BranchId == branchId && i.ProductId == productId);
+            if (inv == null || inv.Quantity < qty)
+                throw new Exception($"Lỗi: Chi nhánh {branchId} không đủ số lượng tồn kho cho sản phẩm ID {productId} để xuất!");
+
+            inv.Quantity -= qty;
+            _inventoryRepo.Update(inv);
         }
     }
 }

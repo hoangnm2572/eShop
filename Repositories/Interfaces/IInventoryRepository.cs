@@ -9,5 +9,6 @@ namespace Repositories.Interfaces
     public interface IInventoryRepository : IBaseRepository<Inventory>
     {
         IEnumerable<Inventory> GetInventoryWithDetails(int branchId);
+        IEnumerable<Inventory> GetInventoryWithDetails();
     }
 }

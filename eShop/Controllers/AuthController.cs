@@ -50,12 +50,25 @@ namespace eShop.Controllers
         }
 
         [HttpPut("change-password")]
-        [Authorize(Roles = "")]
         public IActionResult ChangePassword([FromBody] ChangePasswordRequestDTO request)
         {
             try
             {
                 _authService.ChangePassword(request);
+                return Ok(new { message = "Đổi mật khẩu thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("change-password-by-branch/{branchId}")]
+        public IActionResult ChangePasswordByBranch(int branchId, [FromBody] ChangePasswordRequestDTO request)
+        {
+            try
+            {
+                _authService.ChangePasswordByBranch(branchId, request.NewPassword);
                 return Ok(new { message = "Đổi mật khẩu thành công!" });
             }
             catch (Exception ex)

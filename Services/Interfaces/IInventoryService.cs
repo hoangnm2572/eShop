@@ -9,6 +9,7 @@ namespace Services.Interfaces
     public interface IInventoryService
     {
         IEnumerable<InventoryResponseDTO> GetInventoryByBranch(int branchId);
+        IEnumerable<InventoryResponseDTO> GetInventory();
 
         void DirectImportToBranch(DirectImportRequestDTO request);
         void DirectExportFromBranch(DirectExportRequestDTO request);
@@ -16,7 +17,7 @@ namespace Services.Interfaces
         void TransferInventory(DirectTransferRequestDTO request);
 
         void RequestGoodsFromHub(int requestingBranchId, RequestGoodsDTO request);
-        void ApproveGoodsRequest(int transferId, int approvedByUserId);
+        void ApproveGoodsRequest(int transferId, ApproveGoodsRequestDTO request);
         void CancelGoodsRequest(int transferId);
         void UpdateGoodsRequest(int transferId, int branchId, RequestGoodsDTO request);
     }

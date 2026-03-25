@@ -1,6 +1,8 @@
-﻿using BusinessObjects;
+﻿using Azure.Core;
+using BusinessObjects;
 using BusinessObjects.DTOs;
 using Repositories.Interfaces;
+using Services.Helpers;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -11,10 +13,12 @@ namespace Services.Implementations
     public class BranchService : IBranchService
     {
         private readonly IBranchRepository _branchRepo;
+        private readonly IUserRepository _userRepo;
 
-        public BranchService(IBranchRepository branchRepo)
+        public BranchService(IBranchRepository branchRepo, IUserRepository userRepo)
         {
             _branchRepo = branchRepo;
+            _userRepo = userRepo;
         }
 
         public IEnumerable<BranchResponseDTO> GetAllBranches(bool onlyActive = true)
@@ -62,6 +66,28 @@ namespace Services.Implementations
             };
 
             _branchRepo.Add(branch);
+
+            string username = StringHelper.GenerateUsername(dto.Name);
+
+            var existingUser = _userRepo.GetAll().FirstOrDefault(u => u.Username == username);
+            if (existingUser != null)
+            {
+
+                username = $"{username}_{branch.Id}";
+            }
+
+            string defaultPassword = "123456";
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(defaultPassword);
+
+            var newUser = new User
+            {
+                Username = username,
+                PasswordHash = passwordHash,
+                BranchId = branch.Id,
+                Role = "STORE"
+            };
+
+            _userRepo.Add(newUser);
         }
 
         public void UpdateBranch(int id, BranchUpdateDTO dto)

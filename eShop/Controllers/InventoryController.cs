@@ -15,8 +15,22 @@ namespace eShop.Controllers
             _inventoryService = inventoryService;
         }
 
+        [HttpGet]
+        public IActionResult GetInventory()
+        {
+            try
+            {
+                var inventory = _inventoryService.GetInventory();
+                return Ok(inventory);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("branch/{branchId}")]
-        public IActionResult GetInventory(int branchId)
+        public IActionResult GetInventoryByBranch(int branchId)
         {
             try
             {
@@ -91,12 +105,12 @@ namespace eShop.Controllers
         }
 
         [HttpPut("transfer/{transferId}/approve")]
-        public IActionResult ApproveGoodsRequest(int transferId, [FromQuery] int userId)
+        public IActionResult ApproveGoodsRequest(int transferId, [FromBody] ApproveGoodsRequestDTO request)
         {
             try
             {
-                _inventoryService.ApproveGoodsRequest(transferId, userId);
-                return Ok(new { message = "Đã duyệt phiếu và xuất hàng về chi nhánh thành công!" });
+                _inventoryService.ApproveGoodsRequest(transferId, request);
+                return Ok(new { message = "Đã duyệt và thực hiện chuyển hàng thành công!" });
             }
             catch (Exception ex)
             {
