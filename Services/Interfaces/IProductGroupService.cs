@@ -1,17 +1,15 @@
 ﻿using BusinessObjects.DTOs;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Services.Interfaces
 {
     public interface IProductGroupService
     {
-        IEnumerable<ProductGroupResponseDTO> GetAllProductGroups();
-        ProductGroupResponseDTO GetProductGroupById(int id);
-
-        void SaveProductGroup(ProductGroupRequestDTO request);
-        void UpdateProductGroup(int id, ProductGroupRequestDTO request);
-        void DeleteProductGroup(int id);
+        Task<IEnumerable<ProductGroupResponseDTO>> GetAllProductGroupsAsync();
+        Task<ProductGroupResponseDTO> GetProductGroupByIdAsync(int id);
+        Task SaveProductGroupAsync(ProductGroupRequestDTO request);
+        Task UpdateProductGroupAsync(int id, ProductGroupRequestDTO request);
+        Task DeleteProductGroupAsync(int id);
     }
 }

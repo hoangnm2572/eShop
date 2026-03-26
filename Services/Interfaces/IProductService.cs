@@ -1,15 +1,24 @@
-﻿using BusinessObjects;
-using BusinessObjects.DTOs;
+﻿using BusinessObjects.DTOs;
+using System.Threading.Tasks;
 
 namespace Services.Interfaces
 {
     public interface IProductService
     {
-        IEnumerable<ProductResponseDTO> GetProducts();
-        ProductResponseDTO GetProductById(int id);
-        ProductResponseDTO GetProductByBarcode(string barcode);
-        void SaveProduct(ProductRequestDTO request);
-        void UpdateProduct(int id, ProductRequestDTO request);
-        void DeleteProduct(int id);
+        Task<PagedResponseDTO<ProductResponseDTO>> GetProductsAsync(
+            int page,
+            int pageSize,
+            string? search,
+            int? productGroupId,
+            int? supplierId,
+            bool? isActive,
+            bool? showOnPos
+        );
+
+        Task<ProductResponseDTO> GetProductByIdAsync(int id);
+        Task<ProductResponseDTO> GetProductByBarcodeAsync(string barcode);
+        Task SaveProductAsync(ProductRequestDTO request);
+        Task UpdateProductAsync(int id, ProductRequestDTO request);
+        Task DeleteProductAsync(int id);
     }
 }

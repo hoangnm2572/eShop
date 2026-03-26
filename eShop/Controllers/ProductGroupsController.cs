@@ -1,6 +1,8 @@
 ﻿using BusinessObjects.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
+using System;
+using System.Threading.Tasks;
 
 namespace eShop.Controllers
 {
@@ -16,18 +18,25 @@ namespace eShop.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var groups = _productGroupService.GetAllProductGroups();
-            return Ok(groups);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetAll()
         {
             try
             {
-                var group = _productGroupService.GetProductGroupById(id);
+                var groups = await _productGroupService.GetAllProductGroupsAsync();
+                return Ok(groups);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var group = await _productGroupService.GetProductGroupByIdAsync(id);
                 return Ok(group);
             }
             catch (Exception ex)
@@ -37,11 +46,11 @@ namespace eShop.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] ProductGroupRequestDTO request)
+        public async Task<IActionResult> Create([FromBody] ProductGroupRequestDTO request)
         {
             try
             {
-                _productGroupService.SaveProductGroup(request);
+                await _productGroupService.SaveProductGroupAsync(request);
                 return Ok(new { message = "Thêm Nhóm hàng hóa thành công" });
             }
             catch (Exception ex)
@@ -51,11 +60,11 @@ namespace eShop.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] ProductGroupRequestDTO request)
+        public async Task<IActionResult> Update(int id, [FromBody] ProductGroupRequestDTO request)
         {
             try
             {
-                _productGroupService.UpdateProductGroup(id, request);
+                await _productGroupService.UpdateProductGroupAsync(id, request);
                 return Ok(new { message = "Cập nhật Nhóm hàng hóa thành công" });
             }
             catch (Exception ex)
@@ -65,11 +74,11 @@ namespace eShop.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                _productGroupService.DeleteProductGroup(id);
+                await _productGroupService.DeleteProductGroupAsync(id);
                 return Ok(new { message = "Xóa Nhóm hàng hóa thành công" });
             }
             catch (Exception ex)

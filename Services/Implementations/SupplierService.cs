@@ -5,6 +5,7 @@ using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Services.Implementations
 {
@@ -17,21 +18,21 @@ namespace Services.Implementations
             _supplierRepository = supplierRepository;
         }
 
-        public IEnumerable<SupplierResponseDTO> GetAllSuppliers()
+        public async Task<IEnumerable<SupplierResponseDTO>> GetAllSuppliersAsync()
         {
-            var suppliers = _supplierRepository.GetAll();
+            var suppliers = await _supplierRepository.GetAllAsync();
             return suppliers.Select(MapToResponseDTO).ToList();
         }
 
-        public SupplierResponseDTO GetSupplierById(int id)
+        public async Task<SupplierResponseDTO> GetSupplierByIdAsync(int id)
         {
-            var supplier = _supplierRepository.GetById(id);
+            var supplier = await _supplierRepository.GetByIdAsync(id);
             if (supplier == null) throw new Exception("Không tìm thấy Nhà cung cấp!");
 
             return MapToResponseDTO(supplier);
         }
 
-        public void SaveSupplier(SupplierRequestDTO request)
+        public async Task SaveSupplierAsync(SupplierRequestDTO request)
         {
             var supplier = new Supplier
             {
@@ -43,12 +44,12 @@ namespace Services.Implementations
                 CreatedAt = DateTime.Now
             };
 
-            _supplierRepository.Add(supplier);
+            await _supplierRepository.AddAsync(supplier);
         }
 
-        public void UpdateSupplier(int id, SupplierRequestDTO request)
+        public async Task UpdateSupplierAsync(int id, SupplierRequestDTO request)
         {
-            var supplier = _supplierRepository.GetById(id);
+            var supplier = await _supplierRepository.GetByIdAsync(id);
             if (supplier == null) throw new Exception("Không tìm thấy Nhà cung cấp!");
 
             supplier.Name = request.Name;
@@ -57,15 +58,15 @@ namespace Services.Implementations
             supplier.Email = request.Email;
             supplier.Address = request.Address;
 
-            _supplierRepository.Update(supplier);
+            await _supplierRepository.UpdateAsync(supplier);
         }
 
-        public void DeleteSupplier(int id)
+        public async Task DeleteSupplierAsync(int id)
         {
-            var supplier = _supplierRepository.GetById(id);
+            var supplier = await _supplierRepository.GetByIdAsync(id);
             if (supplier != null)
             {
-                _supplierRepository.Delete(supplier);
+                await _supplierRepository.DeleteAsync(supplier);
             }
         }
 

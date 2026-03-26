@@ -1,8 +1,8 @@
-﻿using BusinessObjects;
-using BusinessObjects.DTOs;
+﻿using BusinessObjects.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Services.Implementations;
 using Services.Interfaces;
+using System;
+using System.Threading.Tasks;
 
 namespace eShop.Controllers
 {
@@ -18,61 +18,97 @@ namespace eShop.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null,
+            [FromQuery] int? productGroupId = null,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] bool? isActive = null,
+            [FromQuery] bool? showOnPos = null)
         {
-            var products = _productService.GetProducts();
-            return Ok(products.ToList());
+            try
+            {
+                var result = await _productService.GetProductsAsync(
+                    page, pageSize, search, productGroupId, supplierId, isActive, showOnPos
+                );
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var product = _productService.GetProductById(id);
-            if (product == null)
+            try
+            {
+                var product = await _productService.GetProductByIdAsync(id);
+                return Ok(product);
+            }
+            catch
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm" });
             }
-            return Ok(product);
-        }
-
-        [HttpPost]
-        public IActionResult Create([FromBody] ProductRequestDTO dto)
-        {
-            _productService.SaveProduct(dto);
-            return Ok(new { message = "Thêm sản phẩm thành công" });
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] ProductRequestDTO dto)
-        {
-            _productService.UpdateProduct(id, dto);
-            return Ok(new { message = "Cập nhật sản phẩm thành công" });
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var existingProduct = _productService.GetProductById(id);
-            if (existingProduct == null)
-            {
-                return NotFound(new { message = "Không tìm thấy sản phẩm để xóa" });
-            }
-
-            _productService.DeleteProduct(id);
-            return Ok(new { message = "Xóa sản phẩm thành công!" });
         }
 
         [HttpGet("barcode/{barcode}")]
-        public IActionResult GetByBarcode(string barcode)
+        public async Task<IActionResult> GetByBarcode(string barcode)
         {
-            var product = _productService.GetProductByBarcode(barcode);
-
-            if (product == null)
+            try
+            {
+                var product = await _productService.GetProductByBarcodeAsync(barcode);
+                return Ok(product);
+            }
+            catch
             {
                 return NotFound(new { message = "Mã vạch này chưa được khai báo trong hệ thống!" });
             }
+        }
 
-            return Ok(product);
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] ProductRequestDTO dto)
+        {
+            try
+            {
+                await _productService.SaveProductAsync(dto);
+                return Ok(new { message = "Thêm sản phẩm thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] ProductRequestDTO dto)
+        {
+            try
+            {
+                await _productService.UpdateProductAsync(id, dto);
+                return Ok(new { message = "Cập nhật sản phẩm thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await _productService.DeleteProductAsync(id);
+                return Ok(new { message = "Xóa sản phẩm thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

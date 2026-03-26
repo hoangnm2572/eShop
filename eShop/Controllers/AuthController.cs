@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
+using System;
+using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace eShop.Controllers
 {
@@ -19,11 +22,11 @@ namespace eShop.Controllers
         }
 
         [HttpPost("register")]
-        public IActionResult Register([FromBody] RegisterRequestDTO request)
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDTO request)
         {
             try
             {
-                _authService.Register(request);
+                await _authService.RegisterAsync(request);
                 return Ok(new { message = "Tạo tài khoản thành công!" });
             }
             catch (Exception ex)
@@ -33,28 +36,32 @@ namespace eShop.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequestDTO request)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
         {
             try
             {
                 string jwtKey = _configuration["JwtSettings:Key"] ?? throw new Exception("Missing JWT Key");
                 string jwtIssuer = _configuration["JwtSettings:Issuer"] ?? throw new Exception("Missing JWT Issuer");
 
-                var response = _authService.Login(request, jwtKey, jwtIssuer);
+                var response = await _authService.LoginAsync(request, jwtKey, jwtIssuer);
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return Unauthorized(new { message = ex.Message });
             }
         }
 
         [HttpPut("change-password")]
-        public IActionResult ChangePassword([FromBody] ChangePasswordRequestDTO request)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO request)
         {
             try
             {
-                _authService.ChangePassword(request);
+                var userIdFromToken = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userIdFromToken != request.TargetUserId)
+                    return Forbid("Bạn không có quyền đổi mật khẩu của tài khoản khác!");
+
+                await _authService.ChangePasswordAsync(request);
                 return Ok(new { message = "Đổi mật khẩu thành công!" });
             }
             catch (Exception ex)
@@ -64,12 +71,12 @@ namespace eShop.Controllers
         }
 
         [HttpPut("change-password-by-branch/{branchId}")]
-        public IActionResult ChangePasswordByBranch(int branchId, [FromBody] ChangePasswordRequestDTO request)
+        public async Task<IActionResult> ChangePasswordByBranch(int branchId, [FromBody] ChangePasswordRequestDTO request)
         {
             try
             {
-                _authService.ChangePasswordByBranch(branchId, request.NewPassword);
-                return Ok(new { message = "Đổi mật khẩu thành công!" });
+                await _authService.ChangePasswordByBranchAsync(branchId, request.NewPassword);
+                return Ok(new { message = "Đổi mật khẩu chi nhánh thành công!" });
             }
             catch (Exception ex)
             {

@@ -2,8 +2,10 @@
 using BusinessObjects.DTOs;
 using Repositories.Interfaces;
 using Services.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Services.Implementations
 {
@@ -16,27 +18,50 @@ namespace Services.Implementations
             _productRepository = productRepository;
         }
 
-        public IEnumerable<ProductResponseDTO> GetProducts()
+        public async Task<PagedResponseDTO<ProductResponseDTO>> GetProductsAsync(
+            int page,
+            int pageSize,
+            string? search,
+            int? productGroupId,
+            int? supplierId,
+            bool? isActive,
+            bool? showOnPos)
         {
-            var products = _productRepository.GetAllWithDetails();
-            return products.Select(MapToResponseDTO).ToList();
+            var (products, totalCount) = await _productRepository.GetPagedProductsWithDetailsAsync(
+                page, pageSize, search, productGroupId, supplierId, isActive, showOnPos
+            );
+
+            var items = products.Select(MapToResponseDTO).ToList();
+
+            return new PagedResponseDTO<ProductResponseDTO>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
-        public ProductResponseDTO GetProductById(int id)
+        public async Task<ProductResponseDTO> GetProductByIdAsync(int id)
         {
-            var p = _productRepository.GetAllWithDetails().FirstOrDefault(x => x.Id == id);
+            var products = await _productRepository.GetAllWithDetailsAsync();
+            var p = products.FirstOrDefault(x => x.Id == id);
+
             if (p == null) throw new Exception("Không tìm thấy sản phẩm!");
+
             return MapToResponseDTO(p);
         }
 
-        public ProductResponseDTO GetProductByBarcode(string barcode)
+        public async Task<ProductResponseDTO> GetProductByBarcodeAsync(string barcode)
         {
-            var p = _productRepository.GetAllWithDetails().FirstOrDefault(x => x.Barcode == barcode);
+            var p = await _productRepository.GetByBarcodeAsync(barcode);
+
             if (p == null) throw new Exception("Không tìm thấy sản phẩm!");
+
             return MapToResponseDTO(p);
         }
 
-        public void SaveProduct(ProductRequestDTO request)
+        public async Task SaveProductAsync(ProductRequestDTO request)
         {
             var product = new Product
             {
@@ -48,25 +73,26 @@ namespace Services.Implementations
                 SalePrice = request.SalePrice,
                 IsActive = request.IsActive,
                 ShowOnPos = request.ShowOnPos,
+                CreatedAt = DateTime.Now,
                 ProductGroupId = request.ProductGroupId,
                 SupplierId = request.SupplierId,
-                CreatedAt = DateTime.Now,
-
-                UnitConversions = request.UnitConversions.Select(u => new UnitConversion
+                UnitConversions = request.UnitConversions?.Select(u => new UnitConversion
                 {
                     UnitName = u.UnitName,
                     ConversionRate = u.ConversionRate,
                     PurchasePrice = u.PurchasePrice,
                     SalePrice = u.SalePrice
-                }).ToList()
+                }).ToList() ?? new List<UnitConversion>()
             };
 
-            _productRepository.Add(product);
+            await _productRepository.AddAsync(product);
         }
 
-        public void UpdateProduct(int id, ProductRequestDTO request)
+        public async Task UpdateProductAsync(int id, ProductRequestDTO request)
         {
-            var product = _productRepository.GetAllWithDetails().FirstOrDefault(x => x.Id == id);
+            var products = await _productRepository.GetAllWithDetailsAsync();
+            var product = products.FirstOrDefault(p => p.Id == id);
+
             if (product == null) throw new Exception("Không tìm thấy sản phẩm!");
 
             product.Barcode = request.Barcode;
@@ -81,24 +107,31 @@ namespace Services.Implementations
             product.SupplierId = request.SupplierId;
 
             product.UnitConversions.Clear();
-            foreach (var u in request.UnitConversions)
+
+            if (request.UnitConversions != null)
             {
-                product.UnitConversions.Add(new UnitConversion
+                foreach (var u in request.UnitConversions)
                 {
-                    UnitName = u.UnitName,
-                    ConversionRate = u.ConversionRate,
-                    PurchasePrice = u.PurchasePrice,
-                    SalePrice = u.SalePrice
-                });
+                    product.UnitConversions.Add(new UnitConversion
+                    {
+                        UnitName = u.UnitName,
+                        ConversionRate = u.ConversionRate,
+                        PurchasePrice = u.PurchasePrice,
+                        SalePrice = u.SalePrice
+                    });
+                }
             }
 
-            _productRepository.Update(product);
+            await _productRepository.UpdateAsync(product);
         }
 
-        public void DeleteProduct(int id)
+        public async Task DeleteProductAsync(int id)
         {
-            var product = _productRepository.GetById(id);
-            if (product != null) _productRepository.Delete(product);
+            var product = await _productRepository.GetByIdAsync(id);
+            if (product != null)
+            {
+                await _productRepository.DeleteAsync(product);
+            }
         }
 
         private ProductResponseDTO MapToResponseDTO(Product p)
@@ -119,14 +152,14 @@ namespace Services.Implementations
                 ProductGroupName = p.ProductGroup?.Name,
                 SupplierId = p.SupplierId,
                 SupplierName = p.Supplier?.Name,
-                UnitConversions = p.UnitConversions.Select(u => new UnitConversionDTO
+                UnitConversions = p.UnitConversions?.Select(u => new UnitConversionDTO
                 {
                     Id = u.Id,
                     UnitName = u.UnitName,
                     ConversionRate = u.ConversionRate,
                     PurchasePrice = u.PurchasePrice,
                     SalePrice = u.SalePrice
-                }).ToList()
+                }).ToList() ?? new List<UnitConversionDTO>()
             };
         }
     }

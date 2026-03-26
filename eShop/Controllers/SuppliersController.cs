@@ -1,7 +1,8 @@
-﻿using BusinessObjects;
-using BusinessObjects.DTOs;
+﻿using BusinessObjects.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interfaces;
+using System;
+using System.Threading.Tasks;
 
 namespace eShop.Controllers
 {
@@ -17,18 +18,25 @@ namespace eShop.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var suppliers = _supplierService.GetAllSuppliers();
-            return Ok(suppliers);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetAll()
         {
             try
             {
-                var supplier = _supplierService.GetSupplierById(id);
+                var suppliers = await _supplierService.GetAllSuppliersAsync();
+                return Ok(suppliers);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var supplier = await _supplierService.GetSupplierByIdAsync(id);
                 return Ok(supplier);
             }
             catch (Exception ex)
@@ -38,25 +46,39 @@ namespace eShop.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] SupplierRequestDTO dto)
-        {
-            _supplierService.SaveSupplier(dto);
-            return Ok(new { message = "Thêm Nhà cung cấp thành công" });
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] SupplierRequestDTO dto)
-        {
-            _supplierService.UpdateSupplier(id, dto);
-            return Ok(new { message = "Cập nhật Nhà cung cấp thành công" });
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Create([FromBody] SupplierRequestDTO dto)
         {
             try
             {
-                _supplierService.DeleteSupplier(id);
+                await _supplierService.SaveSupplierAsync(dto);
+                return Ok(new { message = "Thêm Nhà cung cấp thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] SupplierRequestDTO dto)
+        {
+            try
+            {
+                await _supplierService.UpdateSupplierAsync(id, dto);
+                return Ok(new { message = "Cập nhật Nhà cung cấp thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await _supplierService.DeleteSupplierAsync(id);
                 return Ok(new { message = "Xóa Nhà cung cấp thành công!" });
             }
             catch (Exception ex)

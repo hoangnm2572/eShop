@@ -4,7 +4,8 @@ using Repositories.Interfaces;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Services.Implementations
 {
@@ -17,21 +18,21 @@ namespace Services.Implementations
             _productGroupRepository = productGroupRepository;
         }
 
-        public IEnumerable<ProductGroupResponseDTO> GetAllProductGroups()
+        public async Task<IEnumerable<ProductGroupResponseDTO>> GetAllProductGroupsAsync()
         {
-            var groups = _productGroupRepository.GetAll();
+            var groups = await _productGroupRepository.GetAllAsync();
             return groups.Select(MapToResponseDTO).ToList();
         }
 
-        public ProductGroupResponseDTO GetProductGroupById(int id)
+        public async Task<ProductGroupResponseDTO> GetProductGroupByIdAsync(int id)
         {
-            var group = _productGroupRepository.GetById(id);
+            var group = await _productGroupRepository.GetByIdAsync(id);
             if (group == null) throw new Exception("Không tìm thấy Nhóm hàng hóa!");
 
             return MapToResponseDTO(group);
         }
 
-        public void SaveProductGroup(ProductGroupRequestDTO request)
+        public async Task SaveProductGroupAsync(ProductGroupRequestDTO request)
         {
             var group = new ProductGroup
             {
@@ -40,29 +41,30 @@ namespace Services.Implementations
                 IsActive = request.IsActive
             };
 
-            _productGroupRepository.Add(group);
+            await _productGroupRepository.AddAsync(group);
         }
 
-        public void UpdateProductGroup(int id, ProductGroupRequestDTO request)
+        public async Task UpdateProductGroupAsync(int id, ProductGroupRequestDTO request)
         {
-            var group = _productGroupRepository.GetById(id);
+            var group = await _productGroupRepository.GetByIdAsync(id);
             if (group == null) throw new Exception("Không tìm thấy Nhóm hàng hóa!");
 
             group.Name = request.Name;
             group.Description = request.Description;
             group.IsActive = request.IsActive;
 
-            _productGroupRepository.Update(group);
+            await _productGroupRepository.UpdateAsync(group);
         }
 
-        public void DeleteProductGroup(int id)
+        public async Task DeleteProductGroupAsync(int id)
         {
-            var group = _productGroupRepository.GetById(id);
+            var group = await _productGroupRepository.GetByIdAsync(id);
             if (group != null)
             {
-                _productGroupRepository.Delete(group);
+                await _productGroupRepository.DeleteAsync(group);
             }
         }
+
         private ProductGroupResponseDTO MapToResponseDTO(ProductGroup g)
         {
             return new ProductGroupResponseDTO

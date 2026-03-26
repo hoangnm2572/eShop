@@ -1,16 +1,15 @@
 ﻿using BusinessObjects.DTOs;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Services.Interfaces
 {
     public interface IUserService
     {
-        IEnumerable<UserResponseDTO> GetAllUsers();
-        UserResponseDTO GetUserById(int id);
-        void DeleteUser(int id);
-        void ActivateUser(int id);
-        void UpdateUser(int userId, UpdateUserRequestDTO request);
+        Task<IEnumerable<UserResponseDTO>> GetAllUsersAsync();
+        Task<UserResponseDTO?> GetUserByIdAsync(int id);
+        Task DeleteUserAsync(int id);
+        Task ActivateUserAsync(int id);
+        Task UpdateUserAsync(int userId, UpdateUserRequestDTO request);
     }
 }

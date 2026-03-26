@@ -6,6 +6,7 @@ using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Services.Implementations
 {
@@ -20,16 +21,16 @@ namespace Services.Implementations
             _userRepo = userRepo;
         }
 
-        public IEnumerable<BranchResponseDTO> GetAllBranches(bool onlyActive = true)
+        public async Task<IEnumerable<BranchResponseDTO>> GetAllBranchesAsync(bool onlyActive = true)
         {
-            var query = _branchRepo.GetAll();
+            var branches = await _branchRepo.GetAllAsync();
 
             if (onlyActive)
             {
-                query = query.Where(b => b.IsActive == true);
+                branches = branches.Where(b => b.IsActive == true);
             }
 
-            return query.Select(b => new BranchResponseDTO
+            return branches.Select(b => new BranchResponseDTO
             {
                 Id = b.Id,
                 Name = b.Name,
@@ -39,9 +40,9 @@ namespace Services.Implementations
             }).ToList();
         }
 
-        public BranchResponseDTO? GetBranchById(int id)
+        public async Task<BranchResponseDTO?> GetBranchByIdAsync(int id)
         {
-            var b = _branchRepo.GetById(id);
+            var b = await _branchRepo.GetByIdAsync(id);
             if (b == null) return null;
 
             return new BranchResponseDTO
@@ -54,7 +55,7 @@ namespace Services.Implementations
             };
         }
 
-        public void CreateBranch(BranchCreateDTO dto)
+        public async Task CreateBranchAsync(BranchCreateDTO dto)
         {
             var branch = new Branch
             {
@@ -64,12 +65,12 @@ namespace Services.Implementations
                 IsActive = true
             };
 
-            _branchRepo.Add(branch);
+            await _branchRepo.AddAsync(branch);
 
             string username = StringHelper.GenerateUsername(dto.Name);
 
-            var existingUser = _userRepo.GetAll().FirstOrDefault(u => u.Username == username);
-            if (existingUser != null)
+            bool usernameExists = await _userRepo.IsUsernameExistsAsync(username);
+            if (usernameExists)
             {
                 username = $"{username}_{branch.Id}";
             }
@@ -87,12 +88,12 @@ namespace Services.Implementations
                 IsActive = true
             };
 
-            _userRepo.Add(newUser);
+            await _userRepo.AddAsync(newUser);
         }
 
-        public void UpdateBranch(int id, BranchUpdateDTO dto)
+        public async Task UpdateBranchAsync(int id, BranchUpdateDTO dto)
         {
-            var branch = _branchRepo.GetById(id);
+            var branch = await _branchRepo.GetByIdAsync(id);
             if (branch == null) throw new Exception("Không tìm thấy chi nhánh!");
 
             branch.Name = dto.Name;
@@ -100,19 +101,19 @@ namespace Services.Implementations
             branch.Address = dto.Address;
             branch.IsActive = dto.IsActive;
 
-            _branchRepo.Update(branch);
+            await _branchRepo.UpdateAsync(branch);
         }
 
-        public void DeleteBranch(int id)
+        public async Task DeleteBranchAsync(int id)
         {
             if (id == 1) throw new Exception("Không được phép đóng cửa hoặc xóa Kho tổng (Hub)!");
 
-            var branch = _branchRepo.GetById(id);
+            var branch = await _branchRepo.GetByIdAsync(id);
             if (branch == null) throw new Exception("Không tìm thấy chi nhánh!");
 
             branch.IsActive = false;
 
-            _branchRepo.Update(branch);
+            await _branchRepo.UpdateAsync(branch);
         }
     }
 }

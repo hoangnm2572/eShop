@@ -1,8 +1,8 @@
 ﻿using BusinessObjects.DTOs;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Services.Implementations;
 using Services.Interfaces;
+using System;
+using System.Threading.Tasks;
 
 namespace eShop.Controllers
 {
@@ -18,25 +18,25 @@ namespace eShop.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
             try
             {
-                var users = _userService.GetAllUsers();
+                var users = await _userService.GetAllUsersAsync();
                 return Ok(users);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
         }
 
         [HttpPut("{id}/deactivate")]
-        public IActionResult DeactivateUser(int id)
+        public async Task<IActionResult> DeactivateUser(int id)
         {
             try
             {
-                _userService.DeleteUser(id);
+                await _userService.DeleteUserAsync(id);
                 return Ok(new { message = "Đã khóa tài khoản" });
             }
             catch (Exception ex)
@@ -46,11 +46,11 @@ namespace eShop.Controllers
         }
 
         [HttpPut("{id}/activate")]
-        public IActionResult ActivateUser(int id)
+        public async Task<IActionResult> ActivateUser(int id)
         {
             try
             {
-                _userService.ActivateUser(id);
+                await _userService.ActivateUserAsync(id);
                 return Ok(new { message = "Đã kích hoạt tài khoản" });
             }
             catch (Exception ex)
@@ -60,11 +60,11 @@ namespace eShop.Controllers
         }
 
         [HttpPut("users/{id}")]
-        public IActionResult UpdateUser(int id, [FromBody] UpdateUserRequestDTO request)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequestDTO request)
         {
             try
             {
-                _userService.UpdateUser(id, request);
+                await _userService.UpdateUserAsync(id, request);
                 return Ok(new { message = "Cập nhật thành công!" });
             }
             catch (Exception ex)

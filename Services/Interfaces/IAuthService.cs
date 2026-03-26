@@ -1,15 +1,13 @@
 ﻿using BusinessObjects.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Services.Interfaces
 {
     public interface IAuthService
     {
-        void Register(RegisterRequestDTO request);
-        AuthResponseDTO Login(LoginRequestDTO request, string jwtKey, string jwtIssuer);
-        void ChangePassword(ChangePasswordRequestDTO request);
-        void ChangePasswordByBranch(int branchId, string newPassword);
+        Task RegisterAsync(RegisterRequestDTO request);
+        Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request, string jwtKey, string jwtIssuer);
+        Task ChangePasswordAsync(ChangePasswordRequestDTO request);
+        Task ChangePasswordByBranchAsync(int branchId, string newPassword);
     }
 }

@@ -1,18 +1,15 @@
-﻿using BusinessObjects;
-using BusinessObjects.DTOs;
-using System;
+﻿using BusinessObjects.DTOs;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Services.Interfaces
 {
     public interface ISupplierService
     {
-        IEnumerable<SupplierResponseDTO> GetAllSuppliers();
-        SupplierResponseDTO GetSupplierById(int id);
-        void SaveSupplier(SupplierRequestDTO request);
-        void UpdateSupplier(int id, SupplierRequestDTO request);
-
-        void DeleteSupplier(int id);
+        Task<IEnumerable<SupplierResponseDTO>> GetAllSuppliersAsync();
+        Task<SupplierResponseDTO> GetSupplierByIdAsync(int id);
+        Task SaveSupplierAsync(SupplierRequestDTO request);
+        Task UpdateSupplierAsync(int id, SupplierRequestDTO request);
+        Task DeleteSupplierAsync(int id);
     }
 }

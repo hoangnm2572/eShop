@@ -1,30 +1,30 @@
-﻿using BusinessObjects;
-using BusinessObjects.DTOs;
+﻿using BusinessObjects.DTOs;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Services.Interfaces
 {
     public interface IInventoryService
     {
-        IEnumerable<InventoryResponseDTO> GetInventoryByBranch(int branchId);
-        IEnumerable<InventoryResponseDTO> GetInventory();
+        Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryByBranchAsync(int branchId, string? searchTerm = null, int? productGroupId = null, int? supplierId = null, int page = 1, int pageSize = 10);
+        Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryAsync(string? searchTerm = null, int? productGroupId = null, int? supplierId = null, int page = 1, int pageSize = 10);
 
-        void DirectImportToBranch(DirectImportRequestDTO request);
-        void DirectExportFromBranch(DirectExportRequestDTO request);
+        Task DirectImportToBranchAsync(DirectImportRequestDTO request);
+        Task DirectExportFromBranchAsync(DirectExportRequestDTO request);
+        Task TransferInventoryAsync(DirectTransferRequestDTO request);
+        Task RequestGoodsFromHubAsync(int requestingBranchId, RequestGoodsDTO request);
+        Task ApproveGoodsRequestAsync(int transferId, ApproveGoodsRequestDTO request, int userId);
+        Task CancelGoodsRequestAsync(int transferId, int userId);
+        Task CompleteGoodsRequestAsync(int transferId, int userId);
+        Task UpdateGoodsRequestAsync(int transferId, int branchId, RequestGoodsDTO request);
 
-        void TransferInventory(DirectTransferRequestDTO request);
+        Task<PagedResponseDTO<InventoryLedgerHistoryDTO>> GetInventoryLedgerHistoryAsync(
+            int? branchId = null, string? searchTerm = null, string? transactionType = null, DateTime? startDate = null, DateTime? endDate = null, int page = 1, int pageSize = 10);
 
-        void RequestGoodsFromHub(int requestingBranchId, RequestGoodsDTO request);
-        void ApproveGoodsRequest(int transferId, ApproveGoodsRequestDTO request, int userId);
-        void CancelGoodsRequest(int transferId, int userId);
-        void CompleteGoodsRequest(int transferId, int userId);
-        void UpdateGoodsRequest(int transferId, int branchId, RequestGoodsDTO request);
+        Task<PagedResponseDTO<InventoryTransferHistoryDTO>> GetInventoryTransferHistoryAsync(
+            int? branchId = null, string? searchTerm = null, string? status = null, DateTime? startDate = null, DateTime? endDate = null, int page = 1, int pageSize = 10);
 
-        IEnumerable<InventoryLedgerHistoryDTO> GetInventoryLedgerHistory(int? branchId = null);
-        IEnumerable<InventoryTransferHistoryDTO> GetInventoryTransferHistory(int? branchId = null);
-
-        IEnumerable<InventoryLedgerGroupedDTO> GetInventoryLedgerGroupedHistory(int? branchId = null);
+        Task<PagedResponseDTO<InventoryLedgerGroupedDTO>> GetInventoryLedgerGroupedHistoryAsync(
+            int? branchId = null, string? searchTerm = null, string? transactionType = null, DateTime? startDate = null, DateTime? endDate = null, int page = 1, int pageSize = 10);
     }
 }

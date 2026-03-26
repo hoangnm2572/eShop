@@ -1,16 +1,15 @@
 ﻿using BusinessObjects.DTOs;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Services.Interfaces
 {
     public interface IBranchService
     {
-        IEnumerable<BranchResponseDTO> GetAllBranches(bool onlyActive = true);
-        BranchResponseDTO? GetBranchById(int id);
-        void CreateBranch(BranchCreateDTO dto);
-        void UpdateBranch(int id, BranchUpdateDTO dto);
-        void DeleteBranch(int id);
+        Task<IEnumerable<BranchResponseDTO>> GetAllBranchesAsync(bool onlyActive = true);
+        Task<BranchResponseDTO?> GetBranchByIdAsync(int id);
+        Task CreateBranchAsync(BranchCreateDTO dto);
+        Task UpdateBranchAsync(int id, BranchUpdateDTO dto);
+        Task DeleteBranchAsync(int id);
     }
 }

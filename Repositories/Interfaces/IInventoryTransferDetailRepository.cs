@@ -1,12 +1,12 @@
 ﻿using BusinessObjects;
 using Repositories.Base;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Repositories.Interfaces
 {
     public interface IInventoryTransferDetailRepository : IBaseRepository<InventoryTransferDetail>
     {
+        Task<IEnumerable<InventoryTransferDetail>> GetByTransferIdAsync(int transferId);
     }
 }

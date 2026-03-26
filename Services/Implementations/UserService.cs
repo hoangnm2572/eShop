@@ -3,7 +3,8 @@ using Services.Interfaces;
 using BusinessObjects.DTOs;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Services.Implementations
 {
@@ -18,10 +19,10 @@ namespace Services.Implementations
             _branchRepo = branchRepo;
         }
 
-        public IEnumerable<UserResponseDTO> GetAllUsers()
+        public async Task<IEnumerable<UserResponseDTO>> GetAllUsersAsync()
         {
-            var users = _userRepo.GetAll();
-            var branches = _branchRepo.GetAll();
+            var users = await _userRepo.GetAllAsync();
+            var branches = await _branchRepo.GetAllAsync();
 
             return users.Select(u => new UserResponseDTO
             {
@@ -32,12 +33,12 @@ namespace Services.Implementations
                 BranchId = u.BranchId ?? 0,
                 BranchName = branches.FirstOrDefault(b => b.Id == u.BranchId)?.Name ?? "Hệ thống",
                 IsActive = u.IsActive ?? false
-            });
+            }).ToList();
         }
 
-        public UserResponseDTO GetUserById(int id)
+        public async Task<UserResponseDTO?> GetUserByIdAsync(int id)
         {
-            var u = _userRepo.GetById(id);
+            var u = await _userRepo.GetByIdAsync(id);
             if (u == null) return null;
 
             return new UserResponseDTO
@@ -50,30 +51,30 @@ namespace Services.Implementations
             };
         }
 
-        public void DeleteUser(int id)
+        public async Task DeleteUserAsync(int id)
         {
-            var user = _userRepo.GetById(id);
+            var user = await _userRepo.GetByIdAsync(id);
             if (user == null) throw new Exception("Người dùng không tồn tại");
 
             if (user.Username.ToLower() == "admin")
                 throw new Exception("Không được phép vô hiệu hóa tài khoản quản trị hệ thống mặc định");
-            user.IsActive = false;
 
-            _userRepo.Update(user);
+            user.IsActive = false;
+            await _userRepo.UpdateAsync(user);
         }
 
-        public void ActivateUser(int id)
+        public async Task ActivateUserAsync(int id)
         {
-            var user = _userRepo.GetById(id);
+            var user = await _userRepo.GetByIdAsync(id);
             if (user == null) throw new Exception("Người dùng không tồn tại");
 
             user.IsActive = true;
-            _userRepo.Update(user);
+            await _userRepo.UpdateAsync(user);
         }
 
-        public void UpdateUser(int userId, UpdateUserRequestDTO request)
+        public async Task UpdateUserAsync(int userId, UpdateUserRequestDTO request)
         {
-            var user = _userRepo.GetById(userId);
+            var user = await _userRepo.GetByIdAsync(userId);
             if (user == null) throw new Exception("Không tìm thấy tài khoản!");
 
             if (user.Username.ToLower() == "admin" && request.Role != "ADMIN")
@@ -82,7 +83,7 @@ namespace Services.Implementations
             user.FullName = request.FullName;
             user.Role = request.Role;
 
-            _userRepo.Update(user);
+            await _userRepo.UpdateAsync(user);
         }
     }
 }

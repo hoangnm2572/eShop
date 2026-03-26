@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Repositories.Base;
 using Repositories.dbContext;
 using Repositories.Interfaces;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Repositories.Implementations
 {
@@ -12,18 +15,76 @@ namespace Repositories.Implementations
         {
         }
 
-        public Product GetByBarcode(string barcode)
+        public async Task<Product?> GetByBarcodeAsync(string barcode)
         {
-            return _dbSet.FirstOrDefault(p => p.Barcode == barcode);
+            return await _context.Set<Product>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Barcode == barcode);
         }
 
-        public IEnumerable<Product> GetAllWithDetails()
+        public async Task<IEnumerable<Product>> GetAllWithDetailsAsync()
         {
-            return _dbSet
+            return await _context.Set<Product>()
+                .AsNoTracking()
                 .Include(p => p.ProductGroup)
                 .Include(p => p.Supplier)
                 .Include(p => p.UnitConversions)
-                .ToList();
+                .ToListAsync();
+        }
+
+        public async Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedProductsWithDetailsAsync(
+            int page,
+            int pageSize,
+            string? search,
+            int? productGroupId,
+            int? supplierId,
+            bool? isActive,
+            bool? showOnPos)
+        {
+            var query = _context.Set<Product>()
+                .AsNoTracking()
+                .Include(p => p.ProductGroup)
+                .Include(p => p.Supplier)
+                .Include(p => p.UnitConversions)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(p =>
+                    p.Name.Contains(search) ||
+                    p.Barcode.Contains(search) ||
+                    p.Sku.Contains(search));
+            }
+
+            if (productGroupId.HasValue)
+            {
+                query = query.Where(p => p.ProductGroupId == productGroupId);
+            }
+
+            if (supplierId.HasValue)
+            {
+                query = query.Where(p => p.SupplierId == supplierId);
+            }
+
+            if (isActive.HasValue)
+            {
+                query = query.Where(p => p.IsActive == isActive);
+            }
+
+            if (showOnPos.HasValue)
+            {
+                query = query.Where(p => p.ShowOnPos == showOnPos);
+            }
+
+            int totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(x => x.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
         }
     }
 }
