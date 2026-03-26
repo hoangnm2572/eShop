@@ -193,7 +193,7 @@ namespace Services.Implementations
             if (requestingBranchId == 1)
                 throw new Exception("Kho tổng không thể tự xin hàng của chính mình!");
 
-            string tCode = "REQ-" + DateTime.Now.ToString("yyyyMMddHHmmss");
+            string tCode = "REQ-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 4).ToUpper();
 
             var transfer = new InventoryTransfer
             {
@@ -231,12 +231,15 @@ namespace Services.Implementations
                 _transferDetailRepo.Delete(oldItem);
             }
 
-            transfer.InventoryTransferDetails = request.ItemsToApprove.Select(x => new InventoryTransferDetail
+            foreach (var item in request.ItemsToApprove)
             {
-                ProductId = x.ProductId,
-                Quantity = x.Quantity,
-                TransferId = transferId
-            }).ToList();
+                _transferDetailRepo.Add(new InventoryTransferDetail
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    TransferId = transferId
+                });
+            }
 
             foreach (var item in request.ItemsToApprove)
             {
@@ -326,12 +329,15 @@ namespace Services.Implementations
                 _transferDetailRepo.Delete(oldItem);
             }
 
-            transfer.InventoryTransferDetails = request.Items.Select(x => new InventoryTransferDetail
+            foreach (var item in request.Items)
             {
-                ProductId = x.ProductId,
-                Quantity = x.Quantity,
-                TransferId = transferId
-            }).ToList();
+                _transferDetailRepo.Add(new InventoryTransferDetail
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    TransferId = transferId
+                });
+            }
 
             _transferRepo.Update(transfer);
         }
@@ -363,11 +369,19 @@ namespace Services.Implementations
         public IEnumerable<InventoryLedgerHistoryDTO> GetInventoryLedgerHistory(int? branchId = null)
         {
             var ledgers = _ledgerRepo.GetLedgersWithDetails(branchId);
-            var transfers = _transferRepo.GetAll().ToList();
+            var transfers = _transferRepo.GetAllTransfersWithDetails(null).ToList();
 
             return ledgers.Select(l =>
             {
                 var transfer = transfers.FirstOrDefault(t => t.TransferCode == l.ReferenceCode);
+                string? partnerName = null;
+                if (transfer != null)
+                {
+                    if (l.TransactionType == "TRANSFER_OUT")
+                        partnerName = transfer.ToBranch?.Name;
+                    else if (l.TransactionType == "TRANSFER_IN")
+                        partnerName = transfer.FromBranch?.Name;
+                }
                 return new InventoryLedgerHistoryDTO
                 {
                     Id = l.Id,
@@ -383,7 +397,8 @@ namespace Services.Implementations
                     CreatedBy = l.CreatedBy,
                     ApprovedBy = transfer?.ApprovedBy,
                     ApproverName = transfer?.ApprovedByNavigation?.FullName,
-                    CreatorName = l.Creator?.FullName ?? "Hệ thống"
+                    CreatorName = l.Creator?.FullName ?? "Hệ thống",
+                    PartnerBranchName = partnerName
                 };
             });
         }

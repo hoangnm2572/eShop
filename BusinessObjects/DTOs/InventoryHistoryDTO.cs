@@ -20,6 +20,7 @@ namespace BusinessObjects.DTOs
         public string CreatorName { get; set; } = null!;
         public int? ApprovedBy { get; set; }
         public string? ApproverName { get; set; }
+        public string? PartnerBranchName { get; set; }
     }
 
     public class InventoryTransferHistoryDTO
