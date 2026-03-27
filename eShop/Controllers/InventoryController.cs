@@ -44,11 +44,12 @@ namespace eShop.Controllers
             [FromQuery] int? productGroupId = null,
             [FromQuery] int? supplierId = null,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool inStockOnly = false)
         {
             try
             {
-                var inventory = await _inventoryService.GetInventoryByBranchAsync(branchId, searchTerm, productGroupId, supplierId, page, pageSize);
+                var inventory = await _inventoryService.GetInventoryByBranchAsync(branchId, searchTerm, productGroupId, supplierId, page, pageSize,inStockOnly);
                 return Ok(inventory);
             }
             catch (Exception ex)
@@ -203,11 +204,12 @@ namespace eShop.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] bool isRequestOnly = false)
         {
             try
             {
-                var result = await _inventoryService.GetInventoryTransferHistoryAsync(branchId, searchTerm, typeFilter, startDate, endDate, page, pageSize);
+                var result = await _inventoryService.GetInventoryTransferHistoryAsync(branchId, searchTerm, typeFilter, startDate, endDate, page, pageSize, isRequestOnly);
                 return Ok(result);
             }
             catch (Exception ex)

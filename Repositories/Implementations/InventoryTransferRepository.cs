@@ -23,17 +23,17 @@ namespace Repositories.Implementations
         }
 
         public async Task<(IEnumerable<InventoryTransfer> Items, int TotalCount)> GetPagedTransfersWithDetailsAsync(
-            int? branchId, string? searchTerm, string? status, DateTime? startDate, DateTime? endDate, int page, int pageSize)
+            int? branchId, string? searchTerm, string? status, DateTime? startDate, DateTime? endDate, int page, int pageSize, bool isRequestOnly = false)
         {
-            var query = _context.InventoryTransfers
-                .AsNoTracking()
-                .Include(t => t.FromBranch)
-                .Include(t => t.ToBranch)
-                .Include(t => t.CreatedByNavigation)
-                .Include(t => t.ApprovedByNavigation)
-                .Include(t => t.InventoryTransferDetails).ThenInclude(d => d.Product)
-                .AsSplitQuery()
-                .AsQueryable();
+            var query = _context.InventoryTransfers.AsQueryable();
+
+            if (isRequestOnly)
+            {
+                query = query.Where(t => t.TransferCode != null &&
+                                         t.TransferCode.Trim().ToUpper().StartsWith("REQ"));
+            }
+
+            Console.WriteLine(query.ToQueryString());
 
             if (branchId.HasValue)
                 query = query.Where(t => t.FromBranchId == branchId.Value || t.ToBranchId == branchId.Value);
@@ -66,10 +66,18 @@ namespace Repositories.Implementations
             }
 
             int totalCount = await query.CountAsync();
-            var items = await query.OrderByDescending(t => t.CreatedAt)
-                                   .Skip((page - 1) * pageSize)
-                                   .Take(pageSize)
-                                   .ToListAsync();
+            var items = await query
+                .AsNoTracking()
+                .Include(t => t.FromBranch)
+                .Include(t => t.ToBranch)
+                .Include(t => t.CreatedByNavigation)
+                .Include(t => t.ApprovedByNavigation)
+                .Include(t => t.InventoryTransferDetails)
+                    .ThenInclude(d => d.Product)
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             return (items, totalCount);
         }

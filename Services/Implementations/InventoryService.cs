@@ -32,17 +32,17 @@ namespace Services.Implementations
             _branchRepo = branchRepo;
         }
 
-        public async Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryByBranchAsync(int branchId, string? searchTerm = null, int? productGroupId = null, int? supplierId = null, int page = 1, int pageSize = 10)
+        public async Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryByBranchAsync(int branchId, string? searchTerm = null, int? productGroupId = null, int? supplierId = null, int page = 1, int pageSize = 10, bool inStockOnly = false)
         {
-            return await GetInventoryInternalAsync(branchId, searchTerm, productGroupId, supplierId, page, pageSize);
+            return await GetInventoryInternalAsync(branchId, searchTerm, productGroupId, supplierId, page, pageSize,inStockOnly);
         }
 
-        public async Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryAsync(string? searchTerm = null, int? productGroupId = null, int? supplierId = null, int page = 1, int pageSize = 10)
+        public async Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryAsync(string? searchTerm = null, int? productGroupId = null, int? supplierId = null, int page = 1, int pageSize = 10, bool inStockOnly = false)
         {
-            return await GetInventoryInternalAsync(null, searchTerm, productGroupId, supplierId, page, pageSize);
+            return await GetInventoryInternalAsync(null, searchTerm, productGroupId, supplierId, page, pageSize, inStockOnly);
         }
 
-        private async Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryInternalAsync(int? branchId, string? searchTerm, int? productGroupId, int? supplierId, int page, int pageSize)
+        private async Task<PagedResponseDTO<InventoryResponseDTO>> GetInventoryInternalAsync(int? branchId, string? searchTerm, int? productGroupId, int? supplierId, int page, int pageSize,bool inStockOnly = false)
         {
             if (!branchId.HasValue)
             {
@@ -54,7 +54,7 @@ namespace Services.Implementations
                 }
             }
 
-            var (inventories, totalCount) = await _inventoryRepo.GetPagedInventoryWithDetailsAsync(branchId, searchTerm, productGroupId, supplierId, page, pageSize);
+            var (inventories, totalCount) = await _inventoryRepo.GetPagedInventoryWithDetailsAsync(branchId, searchTerm, productGroupId, supplierId, page, pageSize, inStockOnly);
 
             var items = inventories.Select(i => new InventoryResponseDTO
             {
@@ -154,6 +154,21 @@ namespace Services.Implementations
         {
             using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             string refCode = $"TRF_{DateTime.Now:yyyyMMddHHmmss}";
+
+            var transfer = new InventoryTransfer
+            {
+                TransferCode = refCode,
+                FromBranchId = request.FromBranchId,
+                ToBranchId = request.ToBranchId,
+                Status = "COMPLETED",
+                Note = "Luân chuyển trực tiếp",
+                CreatedAt = DateTime.Now,
+                CreatedBy = request.CreatedBy,
+                ApprovedAt = DateTime.Now,
+                ApprovedBy = request.CreatedBy
+            };
+            await _transferRepo.AddAsync(transfer);
+
             foreach (var item in request.Items)
             {
                 var fromInv = await _inventoryRepo.GetInventoryByBranchAndProductAsync(request.FromBranchId, item.ProductId);
@@ -392,7 +407,9 @@ namespace Services.Implementations
 
                 if (transfer != null)
                 {
-                    partnerName = l.BranchId == transfer.FromBranchId ? transfer.ToBranch?.Name : transfer.FromBranch?.Name;
+                    partnerName = l.BranchId == transfer.FromBranchId
+                        ? (transfer.ToBranch?.Name ?? "Kho tổng")
+                        : (transfer.FromBranch?.Name ?? "Kho tổng");
                 }
 
                 return new InventoryLedgerHistoryDTO
@@ -417,9 +434,9 @@ namespace Services.Implementations
         }
 
         public async Task<PagedResponseDTO<InventoryTransferHistoryDTO>> GetInventoryTransferHistoryAsync(
-            int? branchId = null, string? searchTerm = null, string? status = null, DateTime? startDate = null, DateTime? endDate = null, int page = 1, int pageSize = 10)
+            int? branchId = null, string? searchTerm = null, string? status = null, DateTime? startDate = null, DateTime? endDate = null, int page = 1, int pageSize = 10, bool isRequestOnly = false)
         {
-            var (transfers, totalCount) = await _transferRepo.GetPagedTransfersWithDetailsAsync(branchId, searchTerm, status, startDate, endDate, page, pageSize);
+            var (transfers, totalCount) = await _transferRepo.GetPagedTransfersWithDetailsAsync(branchId, searchTerm, status, startDate, endDate, page, pageSize, isRequestOnly);
 
             var items = transfers.Select(t => new InventoryTransferHistoryDTO
             {
@@ -458,7 +475,7 @@ namespace Services.Implementations
             var transfers = await _transferRepo.GetTransfersByCodesAsync(refCodes);
 
             var groupedItems = ledgers
-                .GroupBy(l => l.ReferenceCode)
+                .GroupBy(l => new { l.ReferenceCode, l.BranchId, l.TransactionType })
                 .Select(g =>
                 {
                     var firstLedger = g.First();
@@ -467,7 +484,9 @@ namespace Services.Implementations
 
                     if (transfer != null)
                     {
-                        partnerName = firstLedger.BranchId == transfer.FromBranchId ? transfer.ToBranch?.Name : transfer.FromBranch?.Name;
+                        partnerName = firstLedger.BranchId == transfer.FromBranchId
+                            ? (transfer.ToBranch?.Name ?? "Kho tổng")
+                            : (transfer.FromBranch?.Name ?? "Kho tổng");
                     }
 
                     return new InventoryLedgerGroupedDTO

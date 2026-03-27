@@ -40,7 +40,7 @@ namespace Repositories.Implementations
                 .FirstOrDefaultAsync(i => i.BranchId == branchId && i.ProductId == productId);
         }
 
-        public async Task<(IEnumerable<Inventory> Items, int TotalCount)> GetPagedInventoryWithDetailsAsync(int? branchId, string? searchTerm, int? productGroupId, int? supplierId, int page, int pageSize)
+        public async Task<(IEnumerable<Inventory> Items, int TotalCount)> GetPagedInventoryWithDetailsAsync(int? branchId, string? searchTerm, int? productGroupId, int? supplierId, int page, int pageSize, bool inStockOnly)
         {
             var query = _context.Inventories
                 .AsNoTracking()
@@ -71,6 +71,11 @@ namespace Repositories.Implementations
             if (supplierId.HasValue)
             {
                 query = query.Where(i => i.Product.SupplierId == supplierId.Value);
+            }
+
+            if (inStockOnly)
+            {
+                query = query.Where(i => i.Quantity > 0);
             }
 
             int totalCount = await query.CountAsync();

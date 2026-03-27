@@ -10,7 +10,7 @@ namespace Repositories.Interfaces
     {
         Task<InventoryTransfer?> GetTransferWithDetailsAsync(int transferId);
         Task<(IEnumerable<InventoryTransfer> Items, int TotalCount)> GetPagedTransfersWithDetailsAsync(
-            int? branchId, string? searchTerm, string? status, DateTime? startDate, DateTime? endDate, int page, int pageSize);
+            int? branchId, string? searchTerm, string? status, DateTime? startDate, DateTime? endDate, int page, int pageSize, bool isRequestOnly = false);
         Task<InventoryTransfer?> GetByTransferCodeAsync(string transferCode);
         Task<IEnumerable<InventoryTransfer>> GetTransfersByCodesAsync(IEnumerable<string> codes);
     }
